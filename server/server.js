@@ -10,7 +10,7 @@ const port = process.env.PORT || 5000;
 // CORS configuration
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',') 
-  : ['http://localhost:5173']; // Default for development
+  : ['http://localhost:5173', 'https://ecommerce-react-c7ls3pu9s-nandis-projects-cc28225b.vercel.app'];
 
 app.use(cors({
   origin: function(origin, callback) {

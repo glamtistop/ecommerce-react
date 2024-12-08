@@ -7,6 +7,25 @@ const { Client, Environment } = require('square');
 const app = express();
 const port = process.env.PORT || 5000;
 
+// CORS configuration
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',') 
+  : ['http://localhost:5173']; // Default for development
+
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true
+}));
+
 // Custom JSON serializer to handle BigInt
 const safeJSONStringify = (obj) => {
   return JSON.stringify(obj, (_, value) => 
@@ -14,8 +33,6 @@ const safeJSONStringify = (obj) => {
   );
 };
 
-// Middleware
-app.use(cors());
 app.use(express.json());
 
 // Override response.json to use our custom serializer
@@ -300,18 +317,22 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok',
     timestamp: new Date().toISOString(),
-    environment: 'production',
+    environment: process.env.NODE_ENV || 'development',
     square: {
       accessToken: !!SQUARE_ACCESS_TOKEN,
       locationId: !!SQUARE_LOCATION_ID,
       applicationId: !!process.env.SQUARE_APPLICATION_ID
+    },
+    cors: {
+      allowedOrigins
     }
   });
 });
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
-  console.log(`Environment: production`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Allowed Origins: ${allowedOrigins.join(', ')}`);
   console.log(`API Configuration Check:`);
   console.log(`- Access Token: ${SQUARE_ACCESS_TOKEN ? 'Present' : 'Missing'}`);
   console.log(`- Location ID: ${SQUARE_LOCATION_ID ? 'Present' : 'Missing'}`);

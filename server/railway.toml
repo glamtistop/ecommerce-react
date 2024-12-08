@@ -1,19 +1,9 @@
 [build]
 builder = "nixpacks"
 buildCommand = "npm install"
-nixpacksConfigPath = "nixpacks.toml"
 
 [deploy]
 startCommand = "node server.js"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 100
 restartPolicyType = "on-failure"
-
-[phases.setup]
-nixPkgs = ["nodejs-18_x"]
-
-[phases.build]
-cmds = ["npm install"]
-
-[phases.start]
-cmd = "node server.js"

@@ -4,5 +4,9 @@ nixPkgs = ['nodejs-18_x']
 [phases.install]
 cmds = ['npm install']
 
+[phases.build]
+cmds = []
+
 [start]
 cmd = 'node server.js'
+runImage = 'ubuntu:22.04'

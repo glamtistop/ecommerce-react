@@ -13,7 +13,9 @@ const allowedOrigins = [
   'http://localhost:4173',
   'https://ecommerce-react-c7ls3pu9s-nandis-projects-cc28225b.vercel.app',
   'https://ecommerce-react-glamtistop.vercel.app',
-  'https://ecommerce-react-git-main-glamtistop.vercel.app'
+  'https://ecommerce-react-git-main-glamtistop.vercel.app',
+  'https://www.waynesworld.store',
+  'https://waynesworld.store'
 ];
 
 app.use(cors({
@@ -29,7 +31,9 @@ app.use(cors({
     }
     return callback(null, true);
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Custom JSON serializer to handle BigInt

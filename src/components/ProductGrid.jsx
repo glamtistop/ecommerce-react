@@ -113,6 +113,8 @@ export default function ProductGrid({ category }) {
     );
   }
 
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {products.map((product) => {
@@ -152,7 +154,7 @@ export default function ProductGrid({ category }) {
                 onClick={() => handleQuickView(product.id)}
               >
                 <img
-                  src={`http://localhost:5000/api/image/${imageId}`}
+                  src={`${API_BASE_URL}/image/${imageId}`}
                   alt={name}
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                   onError={(e) => {

@@ -8,9 +8,13 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // CORS configuration
-const allowedOrigins = process.env.ALLOWED_ORIGINS 
-  ? process.env.ALLOWED_ORIGINS.split(',') 
-  : ['http://localhost:5173', 'https://ecommerce-react-c7ls3pu9s-nandis-projects-cc28225b.vercel.app'];
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:4173',
+  'https://ecommerce-react-c7ls3pu9s-nandis-projects-cc28225b.vercel.app',
+  'https://ecommerce-react-glamtistop.vercel.app',
+  'https://ecommerce-react-git-main-glamtistop.vercel.app'
+];
 
 app.use(cors({
   origin: function(origin, callback) {
@@ -18,6 +22,8 @@ app.use(cors({
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.indexOf(origin) === -1) {
+      console.log('Blocked origin:', origin);
+      console.log('Allowed origins:', allowedOrigins);
       const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
       return callback(new Error(msg), false);
     }

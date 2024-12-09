@@ -7,33 +7,22 @@ const { Client, Environment } = require('square');
 const app = express();
 const port = process.env.PORT || 5000;
 
-// CORS configuration
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:4173',
-  'https://ecommerce-react-c7ls3pu9s-nandis-projects-cc28225b.vercel.app',
-  'https://ecommerce-react-glamtistop.vercel.app',
-  'https://ecommerce-react-git-main-glamtistop.vercel.app',
-  'https://www.waynesworld.store',
-  'https://waynesworld.store'
-];
-
+// Simplified CORS configuration
 app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) === -1) {
-      console.log('Blocked origin:', origin);
-      console.log('Allowed origins:', allowedOrigins);
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
-  },
-  credentials: true,
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:4173',
+    'https://ecommerce-react-c7ls3pu9s-nandis-projects-cc28225b.vercel.app',
+    'https://ecommerce-react-glamtistop.vercel.app',
+    'https://ecommerce-react-git-main-glamtistop.vercel.app',
+    'https://www.waynesworld.store',
+    'https://waynesworld.store'
+  ],
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
 // Custom JSON serializer to handle BigInt
@@ -91,7 +80,6 @@ app.get('/api/image/:imageId', async (req, res) => {
     const response = await squareApi.get(`/catalog/object/${imageId}`);
     
     if (response.data.object && response.data.object.image_data && response.data.object.image_data.url) {
-      // Redirect to the actual image URL
       res.redirect(response.data.object.image_data.url);
     } else {
       res.status(404).send('Image not found');
@@ -107,7 +95,6 @@ app.get('/api/catalog', async (req, res) => {
   try {
     console.log('Fetching catalog...');
     
-    // First, get all catalog objects using search endpoint
     const searchResponse = await squareApi.post('/catalog/search', {
       include_related_objects: true,
       object_types: ["ITEM", "ITEM_VARIATION", "CATEGORY"]
@@ -123,17 +110,13 @@ app.get('/api/catalog', async (req, res) => {
 
     console.log(`Found ${allObjects.length} catalog objects and ${relatedObjects.length} related objects`);
 
-    // Create maps for categories and variations
     const categoryMap = new Map();
     const variationMap = new Map();
 
-    // Process all objects to populate maps
     [...allObjects, ...relatedObjects].forEach(obj => {
       if (obj.type === 'CATEGORY') {
         categoryMap.set(obj.id, obj.category_data.name);
-        console.log(`Found category: ${obj.id} = ${obj.category_data.name}`);
       } else if (obj.type === 'ITEM_VARIATION') {
-        console.log(`Found variation: ${obj.id} = ${obj.item_variation_data?.name}`);
         variationMap.set(obj.id, {
           id: obj.id,
           type: 'ITEM_VARIATION',
@@ -151,7 +134,6 @@ app.get('/api/catalog', async (req, res) => {
       }
     });
 
-    // Process items
     const items = allObjects
       .filter(obj => obj.type === 'ITEM')
       .map(item => {
@@ -161,11 +143,9 @@ app.get('/api/catalog', async (req, res) => {
           name: categoryMap.get(id) || 'Uncategorized'
         }));
 
-        // Map variation IDs to their full data
         const variations = (item.item_data.variations || []).map(varRef => {
           const variationData = variationMap.get(varRef.id);
           if (!variationData) {
-            console.warn(`Variation not found for ID: ${varRef.id}`);
             return null;
           }
           return {
@@ -180,8 +160,6 @@ app.get('/api/catalog', async (req, res) => {
             }
           };
         }).filter(Boolean);
-
-        console.log(`Processing item "${item.item_data.name}" with ${variations.length} variations`);
 
         return {
           id: item.id,
@@ -244,14 +222,12 @@ app.post('/api/payment', async (req, res) => {
       throw new Error('Missing required payment information');
     }
 
-    // Convert total to string first, then to number
     const amount = Math.round(Number(String(total)));
 
     if (isNaN(amount)) {
       throw new Error('Invalid payment amount');
     }
 
-    // Create customer in Square
     const { result: customerResult } = await squareClient.customersApi.createCustomer({
       idempotencyKey: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       givenName: customerInfo.firstName,
@@ -268,7 +244,6 @@ app.post('/api/payment', async (req, res) => {
       }
     });
 
-    // Create payment with customer information
     const payment = {
       idempotencyKey: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       sourceId: sourceId,
@@ -290,15 +265,8 @@ app.post('/api/payment', async (req, res) => {
       autocomplete: true
     };
 
-    console.log('Creating payment with Square...', { 
-      locationId: SQUARE_LOCATION_ID, 
-      amount: amount,
-      customerId: customerResult.customer.id
-    });
-
     const { result } = await squareClient.paymentsApi.createPayment(payment);
 
-    console.log('Payment processed successfully:', result.payment.id);
     res.json({
       success: true,
       payment: {
@@ -332,9 +300,6 @@ app.get('/api/health', (req, res) => {
       accessToken: !!SQUARE_ACCESS_TOKEN,
       locationId: !!SQUARE_LOCATION_ID,
       applicationId: !!process.env.SQUARE_APPLICATION_ID
-    },
-    cors: {
-      allowedOrigins
     }
   });
 });
@@ -342,9 +307,4 @@ app.get('/api/health', (req, res) => {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Allowed Origins: ${allowedOrigins.join(', ')}`);
-  console.log(`API Configuration Check:`);
-  console.log(`- Access Token: ${SQUARE_ACCESS_TOKEN ? 'Present' : 'Missing'}`);
-  console.log(`- Location ID: ${SQUARE_LOCATION_ID ? 'Present' : 'Missing'}`);
-  console.log(`- Application ID: ${process.env.SQUARE_APPLICATION_ID ? 'Present' : 'Missing'}`);
 });

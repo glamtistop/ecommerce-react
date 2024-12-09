@@ -7,23 +7,21 @@ const { Client, Environment } = require('square');
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Simplified CORS configuration
-app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:4173',
-    'https://ecommerce-react-c7ls3pu9s-nandis-projects-cc28225b.vercel.app',
-    'https://ecommerce-react-glamtistop.vercel.app',
-    'https://ecommerce-react-git-main-glamtistop.vercel.app',
-    'https://www.waynesworld.store',
-    'https://waynesworld.store'
-  ],
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  preflightContinue: false,
-  optionsSuccessStatus: 204
-}));
+// CORS middleware
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'https://www.waynesworld.store');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  next();
+});
+
+app.use(express.json());
 
 // Custom JSON serializer to handle BigInt
 const safeJSONStringify = (obj) => {
@@ -31,8 +29,6 @@ const safeJSONStringify = (obj) => {
     typeof value === 'bigint' ? value.toString() : value
   );
 };
-
-app.use(express.json());
 
 // Override response.json to use our custom serializer
 app.use((req, res, next) => {

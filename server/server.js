@@ -7,19 +7,31 @@ const { Client, Environment } = require('square');
 const app = express();
 const port = process.env.PORT || 5000;
 
-// CORS middleware
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://www.waynesworld.store');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
+// CORS configuration for both production and development
+const allowedOrigins = [
+  'https://www.waynesworld.store',
+  'https://waynesworld.store',
+  'http://localhost:5173',  // Vite dev server
+  'http://localhost:3000'   // Alternative local port
+];
 
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
-  next();
-});
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Check if the origin is allowed
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  maxAge: 86400 // CORS preflight cache for 24 hours
+}));
 
 app.use(express.json());
 
@@ -303,4 +315,5 @@ app.get('/api/health', (req, res) => {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log('Allowed origins:', allowedOrigins);
 });
